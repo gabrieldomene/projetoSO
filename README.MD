@@ -1,7 +1,7 @@
-#MANAO - The Distributed File System
+# MANAO - The Distributed File System
 This project is the final implementation of Operating system architecture, the objective is to develop a distributed file system in C using GNU CC and system calls POSIX. The system MUST allow that remote users access the local files at the same time.
 
-##Operations allowed:
+## Operations allowed:
 - Create (sub)directory
 - Remove (sub)directory
 - Enter (sub)directory
