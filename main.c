@@ -25,7 +25,7 @@ int main(){
     {
         printf("Failed to create socket, exiting. . . %i\n", socket_name);
     }else{
-        printf("Socket created!\n");
+        printf("Server socket created!\n");
     }
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -35,17 +35,14 @@ int main(){
 
     listen(socket_name, 10);
 
+    printf("Esperando msg");
     while (1)
     {
-        connfd = accept(socket_name, (struct sockaddr*)NULL, NULL);
-        ticks = time(NULL);
-        snprintf(sendBuff, sizeof(sendBuff), "%.24s\r\n", ctime(&ticks));
-        //write(connfd, sendBuff, strlen(sendBuff));
 
-        
+        connfd = accept(socket_name, (struct sockaddr*)NULL, NULL);
         sleep(1);
+        close(connfd);
     }
-    close(connfd);
 
     return 0;
 }
