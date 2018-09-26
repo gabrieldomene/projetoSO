@@ -6,23 +6,23 @@
 #include <stdlib.h>
 #include <arpa/inet.h>
 #include <pthread.h>
-#define N_THREAD 100
-/* 
+#define N_THREAD 5
+
 void *thread_tratadora(void *arg)
 {
     pthread_t x;
     x = pthread_self();
     printf("Nova thread criada. TID = %ld!!\n", x);
     pthread_exit(0);
-} */
+}
 
 int main()
 {
     //criar socket -> bind -> listen -< connection
     int socket_name = 0, new_conn = 0, option = 1;
     struct sockaddr_in serv_addr;
-    char msg_recv[20];
-
+    char msg_recv[1024];
+    int k = 0, i = 0;
     char sendBuff[1025];
 
     socket_name = socket(AF_INET, SOCK_STREAM, 0);
@@ -54,10 +54,24 @@ int main()
     while (1)
     {   
         new_conn = accept(socket_name, (struct sockaddr*)NULL, NULL);
-        read(new_conn, msg_recv, sizeof(msg_recv));
-        fprintf(stderr, "Mensagem recebida: %s\n", msg_recv);
-        //apaga resíduo do buffer
-        bzero(msg_recv, sizeof(msg_recv));
+        printf("\nConection made\n");
+        int msg = read(new_conn, msg_recv, sizeof(msg_recv));
+        //printf("Mensagem recebida: %s\n", msg_recv);
+      
+        printf("Mensagem recebida: ");
+        for(k = 0; k < msg; k++){
+            printf("%c", msg_recv[k]);
+        }
+        pthread_t thread[N_THREAD];
+        printf("Antes de criar as thread\n");
+        for (i = 0; i < N_THREAD; i++)
+        {
+            pthread_create(&thread[i], NULL, thread_tratadora, NULL);
+        }
+        for (i = 0; i < N_THREAD; i++)
+        {
+            pthread_join(thread[i], NULL);
+        }
         close(new_conn);
      }   
     
