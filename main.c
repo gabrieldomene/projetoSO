@@ -1,4 +1,4 @@
-#include <strings.h>
+#include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -7,32 +7,120 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 #define N_THREAD 5
+#define MSG_LEN 1024
 
 int con = 0;
 pthread_t threads[N_THREAD];
+pthread_mutex_t mutex;
+char msg_recv[MSG_LEN];
+char server_resposta[MSG_LEN];
 
 void *thread_tratadora(void * args)
 {
-    int k, msg;
+    int k, msg, id;
     int conn = (int *) args;
-    char msg_recv[1024];
+    char tempout[MSG_LEN];
+    char * pch;
     printf("\nConection made\n");
+    memset(&msg_recv, '\0', sizeof(msg_recv));
     //Thread roda eterno até sair
     while(1)
     {
         msg = read(conn, msg_recv, sizeof(msg_recv));
-        printf("\n[%i] Conn msg: ", conn);
-        for (k = 0; k < msg; k++){
-            printf("%c",msg_recv[k]); 
+        /* id = identifica(msg_recv); */
+        printf("\n[%i]cmd: ", conn);
+        printf("%s", msg_recv);
+        if(!strncmp(msg_recv, "ls", 2))
+        {
+            printf("LISTAGEM DOS ARQUIVOS\n");
+            system("ls");
+            strncpy(server_resposta, " - - - - - > ls executado no server < - - - - - \n", 0));
+            send(conn, server_resposta, sizeof(server_resposta), NULL);
+            //execl("/bin/ls",  "ls", NULL);
+        }else if(!strncmp(msg_recv, "touch", 5))
+        {   
+            pthread_mutex_lock(&mutex);
+            printf("CRIANDO ARQUIVO\n");
+            /* char *lastToken;
+            pch = strtok(msg_recv, " ");
+            while (pch != NULL)
+            {   
+                lastToken = pch;
+                pch = strtok (NULL, " ");
+            }
+            printf("%s\n", lastToken);
+            execl("/bin/touch", "touch", lastToken, NULL); */
+            system(msg_recv);
+            strncpy(server_resposta, " - - - - - > touch executado no server < - - - - - \n", 0);
+            send(conn, server_resposta, sizeof(server_resposta), NULL);
+            pthread_mutex_unlock(&mutex);
+
+        }else if(!strncmp(msg_recv, "gedit", 5))
+        {
+            printf("EDITANDO ARQUIVO\n");
+            pthread_mutex_lock(&mutex);
+            system(msg_recv);
+            strncpy(server_resposta, " - - - - - > gedit aberto para edição < - - - - - \n", 0);
+            send(conn, server_resposta, sizeof(server_resposta), NULL);
+            pthread_mutex_unlock(&mutex);
+        }else if(!strncmp(msg_recv, "rm -r",5))
+        {
+            printf("REMOVENDO ARQUIVO\n");
+            pthread_mutex_lock(&mutex);
+            system(msg_recv);
+            strncpy(server_resposta, " - - - - - > arquivo removido server side < - - - - - \n", 0);
+            send(conn, server_resposta, sizeof(server_resposta), NULL);
+            pthread_mutex_unlock(&mutex);
+        }else if(!strncmp(msg_recv, "mkdir",5))
+        {
+            printf("DIRETÓRIO CRIADO\n");
+            pthread_mutex_lock(&mutex);
+            system(msg_recv);
+            strncpy(server_resposta, " - - - - - > dir criado < - - - - - \n", 0);
+            send(conn, server_resposta, sizeof(server_resposta), NULL);
+            pthread_mutex_unlock(&mutex);
         }
+        else if(!strncmp(msg_recv, "cd",2))
+        {
+            //erro ainda!!
+            printf("DIRETÓRIO ALTERADO\n");
+            pthread_mutex_lock(&mutex);
+            system(msg_recv);
+            system("pwd");
+            strncpy(server_resposta, " - - - - - > dir alterado < - - - - - \n", 0);
+            send(conn, server_resposta, sizeof(server_resposta), NULL);
+            pthread_mutex_unlock(&mutex);
+        }
+        else if(!strncmp(msg_recv, "cat",3))
+        {
+            printf("CONTEÚDO DENTRO DO ARQUIVO\n");
+            pthread_mutex_lock(&mutex);
+            system(msg_recv);
+            strncpy(server_resposta, " - - - - - > leitura no terminal server < - - - - - \n", 0);
+            send(conn, server_resposta, sizeof(server_resposta), NULL);
+            pthread_mutex_unlock(&mutex);
+        }else if(!strncmp(msg_recv, "echo",4))
+        {
+            printf("ADICIONANDO AO ARQUIVO\n");
+            pthread_mutex_lock(&mutex);
+            system(msg_recv);
+            strncpy(server_resposta, " - - - - - > escrito no arq < - - - - - \n", 0);
+            send(conn, server_resposta, sizeof(server_resposta), NULL);
+            pthread_mutex_unlock(&mutex);
+        }
+
+        //Zera string
+        memset(&msg_recv, '\0', sizeof(msg_recv));
     }
-    /* pthread_exit(0); */
+	pthread_exit(0);
 }
 
 void socket_creation();
+/* int identifica(char mensagem[1024]); */
 
 int main()
 {
+    pthread_mutex_init(&mutex, NULL);
     socket_creation();
     return 0;
 }
@@ -46,6 +134,7 @@ int main()
 void socket_creation()
 {
     //criar socket -> bind -> listen -> connection
+    //Config inicial
     int socket_name = 0, new_conn = 0, option = 1;
     struct sockaddr_in serv_addr;
     struct sockaddr_in address;
@@ -53,6 +142,7 @@ void socket_creation()
     int i = 0;
     char sendBuff[1024];
 
+    //Socket e tratamento de errros
     socket_name = socket(AF_INET, SOCK_STREAM, 0);
     if(socket_name < 0)
     {
@@ -62,7 +152,7 @@ void socket_creation()
         printf("%s", "Created socket!\n");
         
     }
-
+    //Opcoes de porta
     if (setsockopt(socket_name, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &option, sizeof(option))) {
         printf("Socket error");
         exit(1);
@@ -78,11 +168,6 @@ void socket_creation()
       exit(1);
    }
 
-   /*  if (listen(socket_name, 10)){
-        perror("ERROR on listening\n");
-        exit(1);
-    } */
-
     //Running multiple threads
     for (i = 0; i < N_THREAD; i++) {
         //Listen capacity
@@ -93,6 +178,21 @@ void socket_creation()
         pthread_create(&threads[i], NULL, thread_tratadora, (void *) accept(socket_name, (struct sockaddr *)&address, (socklen_t *)&addrlen));
 	
     }
-    //close(new_conn);
         
 }
+
+/* int identifica(char mensagem[1024]){
+    int id;
+    if (mensagem[0] == 'l')
+    {
+        id = 1;
+    }else if (mensagem[0] == 't')
+    {
+        id = 2;
+    }else if (mensagem[0] == 'c'){
+        id = 3;
+    }else{
+        id = 0;
+    }
+    return id;
+} */
