@@ -26,7 +26,7 @@ void *thread_tratadora(void * args)
             printf("%c",msg_recv[k]); 
         }
     }
-    pthread_exit(0); */
+    /* pthread_exit(0); */
 }
 
 void socket_creation();
