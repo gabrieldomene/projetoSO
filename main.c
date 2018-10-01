@@ -30,14 +30,15 @@ void *thread_tratadora(void * args)
         /* id = identifica(msg_recv); */
         printf("\n[%i]cmd: ", conn);
         printf("%s", msg_recv);
-        if(!strncmp(msg_recv, "ls", 2))
+        if(!strncmp(msg_recv, "ls", 2))//comando ls
         {
             printf("LISTAGEM DOS ARQUIVOS\n");
             system("ls");
-            strncpy(server_resposta, " - - - - - > ls executado no server < - - - - - \n", 0));
-            send(conn, server_resposta, sizeof(server_resposta), NULL);
+            strncpy(server_resposta, " - - - - - > ls executado no server < - - - - - \n", 0);
+            write(conn, server_resposta, sizeof(server_resposta));
+            send(conn, server_resposta, sizeof(server_resposta), 0);
             //execl("/bin/ls",  "ls", NULL);
-        }else if(!strncmp(msg_recv, "touch", 5))
+        }else if(!strncmp(msg_recv, "touch", 5))//comando touch
         {   
             pthread_mutex_lock(&mutex);
             printf("CRIANDO ARQUIVO\n");
@@ -52,35 +53,35 @@ void *thread_tratadora(void * args)
             execl("/bin/touch", "touch", lastToken, NULL); */
             system(msg_recv);
             strncpy(server_resposta, " - - - - - > touch executado no server < - - - - - \n", 0);
-            send(conn, server_resposta, sizeof(server_resposta), NULL);
+            send(conn, server_resposta, sizeof(server_resposta), 0);
             pthread_mutex_unlock(&mutex);
 
-        }else if(!strncmp(msg_recv, "gedit", 5))
+        }else if(!strncmp(msg_recv, "gedit", 5))//comando abrir editor, n precisava
         {
             printf("EDITANDO ARQUIVO\n");
             pthread_mutex_lock(&mutex);
             system(msg_recv);
             strncpy(server_resposta, " - - - - - > gedit aberto para edição < - - - - - \n", 0);
-            send(conn, server_resposta, sizeof(server_resposta), NULL);
+            send(conn, server_resposta, sizeof(server_resposta), 0);
             pthread_mutex_unlock(&mutex);
-        }else if(!strncmp(msg_recv, "rm -r",5))
+        }else if(!strncmp(msg_recv, "rm -r",5))//comando remover arquivo/diretorio
         {
             printf("REMOVENDO ARQUIVO\n");
             pthread_mutex_lock(&mutex);
             system(msg_recv);
             strncpy(server_resposta, " - - - - - > arquivo removido server side < - - - - - \n", 0);
-            send(conn, server_resposta, sizeof(server_resposta), NULL);
+            send(conn, server_resposta, sizeof(server_resposta), 0);
             pthread_mutex_unlock(&mutex);
-        }else if(!strncmp(msg_recv, "mkdir",5))
+        }else if(!strncmp(msg_recv, "mkdir",5))//comando mkdir
         {
             printf("DIRETÓRIO CRIADO\n");
             pthread_mutex_lock(&mutex);
             system(msg_recv);
             strncpy(server_resposta, " - - - - - > dir criado < - - - - - \n", 0);
-            send(conn, server_resposta, sizeof(server_resposta), NULL);
+            send(conn, server_resposta, sizeof(server_resposta), 0);
             pthread_mutex_unlock(&mutex);
         }
-        else if(!strncmp(msg_recv, "cd",2))
+        else if(!strncmp(msg_recv, "cd",2))//comando alterar diretorio N FUNFA
         {
             //erro ainda!!
             printf("DIRETÓRIO ALTERADO\n");
@@ -88,24 +89,24 @@ void *thread_tratadora(void * args)
             system(msg_recv);
             system("pwd");
             strncpy(server_resposta, " - - - - - > dir alterado < - - - - - \n", 0);
-            send(conn, server_resposta, sizeof(server_resposta), NULL);
+            send(conn, server_resposta, sizeof(server_resposta), 0);
             pthread_mutex_unlock(&mutex);
         }
-        else if(!strncmp(msg_recv, "cat",3))
+        else if(!strncmp(msg_recv, "cat",3))//comando cat, mostrar no terminal conteudo
         {
-            printf("CONTEÚDO DENTRO DO ARQUIVO\n");
+            printf("CONTEÚDO DENTRO DO ARQUIVO\n\n");
             pthread_mutex_lock(&mutex);
             system(msg_recv);
             strncpy(server_resposta, " - - - - - > leitura no terminal server < - - - - - \n", 0);
-            send(conn, server_resposta, sizeof(server_resposta), NULL);
+            send(conn, server_resposta, sizeof(server_resposta), 0);
             pthread_mutex_unlock(&mutex);
-        }else if(!strncmp(msg_recv, "echo",4))
+        }else if(!strncmp(msg_recv, "echo",4))//comando echo, escreve dentro do arquivo
         {
             printf("ADICIONANDO AO ARQUIVO\n");
             pthread_mutex_lock(&mutex);
             system(msg_recv);
             strncpy(server_resposta, " - - - - - > escrito no arq < - - - - - \n", 0);
-            send(conn, server_resposta, sizeof(server_resposta), NULL);
+            send(conn, server_resposta, sizeof(server_resposta), 0);
             pthread_mutex_unlock(&mutex);
         }
 
@@ -122,6 +123,7 @@ int main()
 {
     pthread_mutex_init(&mutex, NULL);
     socket_creation();
+    pthread_mutex_destroy(&mutex);
     return 0;
 }
 
